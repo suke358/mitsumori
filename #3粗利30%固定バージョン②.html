@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鋼材概算見積もり（Lift-Off版）</title>
+    <style>
+        body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; }
+        h1 { text-align: center; margin-top: 10px; }
+        label { display: block; margin-top: 20px; font-weight: bold; }
+        select, input { width: 100%; padding: 8px; font-size: 16px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; margin: 30px 0; }
+        th, td { border: 1px solid #ccc; padding: 12px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        .breakdown { margin-top: 30px; }
+        .breakdown table { font-size: 1.1em; }
+        .total { font-size: 1.5em; font-weight: bold; text-align: right; margin-top: 20px; }
+        .qr-section { text-align: center; margin-top: 50px; }
+        #qrcode { margin: 20px auto; }
+        .logo { display: block; margin: 0 auto 20px; max-width: 400px; height: auto; } /* ロゴサイズ調整（好みで変更OK） */
+    </style>
+    <!-- QRコード生成ライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Lift-Off ロゴ -->
+    <img src="https://i.postimg.cc/rw0WfWnz/sukurinshotto-2025-12-15-2-56-18.png" alt="Lift-Off 会社ロゴ" class="logo">
+
+    <h1>鋼材概算見積もり表</h1>
+
+    <label>選択した鋼材</label>
+    <select id="steel">
+        <option value="">-- 鋼材を選んでください --</option>
+        <option value="150">一般構造用鋼 (150円/kg) - SS400 等</option>
+        <option value="250">炭素鋼（機械構造用） (250円/kg) - S45C 等</option>
+        <option value="400">合金鋼 (400円/kg) - SCM, SNCM 等</option>
+        <option value="1200">ステンレス鋼 (1200円/kg) - SUS304/316 等</option>
+        <option value="5000">工具鋼 (5,000円/kg) - SKD, SKH 等</option>
+    </select>
+
+    <label>重量（kg）</label>
+    <input type="number" id="weight" min="0" step="0.01" placeholder="例: 100">
+
+    <!-- 諸経費率（粗利）を固定30%にし、入力フィールドを表示なし -->
+    <!-- <label>諸経費率（%）</label> --> <!-- コメントアウトで非表示 -->
+    <!-- <input type="number" id="expenseRate" min="0" step="0.1" value="30"> --> <!-- コメントアウトで非表示 -->
+
+    <div class="breakdown">
+        <h2>内訳</h2>
+        <table>
+            <tr><td>鋼材費（税抜）</td><td id="material">0</td><td>円</td></tr>
+            <tr><td>諸経費（税抜）</td><td id="expense">0</td><td>円</td></tr>
+            <tr><td>小計（税抜）</td><td id="subtotal">0</td><td>円</td></tr>
+            <tr><td>消費税（10%）</td><td id="tax">0</td><td>円</td></tr>
+        </table>
+        <div class="total">
+            最終見積金額（税込）： <span id="total">0</span> 円
+        </div>
+    </div>
+
+    <h2 style="margin-top:50px;">参考単価表</h2>
+    <table>
+        <tr><th>鋼種カテゴリ</th><th>単価（円/kg）</th><th>代表材質例</th></tr>
+        <tr><td>一般構造用鋼</td><td>150</td><td>SS400 等</td></tr>
+        <tr><td>炭素鋼（機械構造用）</td><td>250</td><td>S45C 等</td></tr>
+        <tr><td>合金鋼</td><td>400</td><td>SCM, SNCM 等</td></tr>
+        <tr><td>ステンレス鋼</td><td>1200</td><td>SUS304/316 等</td></tr>
+        <tr><td>工具鋼</td><td>5000</td><td>SKD, SKH 等</td></tr>
+    </table>
+
+    <div class="qr-section">
+        <h2>このページのQRコード</h2>
+        <p>スマホで読み取るとこの見積もりページが開きます</p>
+        <div id="qrcode"></div>
+    </div>
+
+    <script>
+        // 計算ロジック（諸経費率を固定30%に設定）
+        const steelSelect = document.getElementById('steel');
+        const weightInput = document.getElementById('weight');
+        const expenseRate = 30; // 固定30%（表示なし）
+
+        const materialSpan = document.getElementById('material');
+        const expenseSpan = document.getElementById('expense');
+        const subtotalSpan = document.getElementById('subtotal');
+        const taxSpan = document.getElementById('tax');
+        const totalSpan = document.getElementById('total');
+
+        function calculate() {
+            const pricePerKg = parseFloat(steelSelect.value) || 0;
+            const weight = parseFloat(weightInput.value) || 0;
+
+            const materialCost = pricePerKg * weight;
+            const expenseCost = materialCost * (expenseRate / 100);
+            const subtotal = materialCost + expenseCost;
+            const tax = subtotal * 0.1;
+            const total = subtotal + tax;
+
+            materialSpan.textContent = Math.round(materialCost).toLocaleString();
+            expenseSpan.textContent = Math.round(expenseCost).toLocaleString();
+            subtotalSpan.textContent = Math.round(subtotal).toLocaleString();
+            taxSpan.textContent = Math.round(tax).toLocaleString();
+            totalSpan.textContent = Math.round(total).toLocaleString();
+        }
+
+        steelSelect.addEventListener('change', calculate);
+        weightInput.addEventListener('input', calculate);
+        calculate();
+
+        // QRコード生成
+        new QRCode(document.getElementById("qrcode"), {
+            text: window.location.href,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff"
+        });
+    </script>
+</body>
+</html>
